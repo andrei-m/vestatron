@@ -29,32 +29,16 @@ function Stock(symbol, shares, grantDate) {
   }
 }
 
-// Remove the given Stock from DOM and data store
-function removeStockElement(element) {
-  if (confirm('Remove this stock?')) {
-    var index = element.data('index');
-    stocks.splice(index, 1);
-    localStorage.setItem('stocks', JSON.stringify(stocks));
-    element.remove(); 
-    renderStocks();
-  }
-}
-
 function renderStocks() {
   var container = $("#graphs");
   container.find("div").remove();
 
   for (var i=0 ; i < stocks.length; i++) {
     stocks[i].value(function(stock, value) {
-      var unvested = $("<div class='unvested'></div>").data("index", i);
+      var unvested = $("<div class='unvested'></div>").data("stock", stock);
       var vestedPercentage = Math.floor(stock.vestedRatio() * 100).toString() + "%";
       var label = stock.symbol + " $" + value.toFixed(2);
       var vested = $("<div class='vested'></div>").css('width', vestedPercentage).html(label);
-      /*
-      unvested.dblclick(function() {
-        removeStockElement($(this))
-      });
-      */
       unvested.append(vested);
       container.append(unvested);
     });
@@ -78,6 +62,12 @@ $(function() {
                             $('input#grant_date').val());
       $('input').val('');
       stocks.push(stock);
+      localStorage.setItem("stocks", JSON.stringify(stocks));
+      renderStocks();
+    });
+
+    $('button#clear').click(function() {
+      stocks = [];
       localStorage.setItem("stocks", JSON.stringify(stocks));
       renderStocks();
     });
