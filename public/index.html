@@ -3,8 +3,19 @@
   <head>
     <meta charset="utf-8">
     <title>VESTATRON</title>
+    <style type="text/css" src="css/style.css"></style>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="js/client.js"></script>
   </head>
   <body>
-    hello
+    <div id="graphs"></div>
+    <footer>
+      <form>
+        <label for="symbol">stock symbol:</label><input type="text" id="symbol" />
+        <label for="shares"># shares:</label><input type="text" id="shares" />
+        <label for="grant_date">date granted:</label><input type="date" id="grant_date" />
+        <button type="button" id="add">Add!</button>
+      <form>
+    </footer>
   </body>
 </html>
