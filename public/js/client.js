@@ -36,6 +36,7 @@ function removeStockElement(element) {
     stocks.splice(index, 1);
     localStorage.setItem('stocks', JSON.stringify(stocks));
     element.remove(); 
+    renderStocks();
   }
 }
 
@@ -44,17 +45,16 @@ function renderStocks() {
   container.find("div").remove();
 
   for (var i=0 ; i < stocks.length; i++) {
-    var stock = stocks[i];
-    var unvested = $("<div class='unvested'></div>").data("index", i).addClass('unvested');;
-
-    stock.value(function(stock, value) {
+    stocks[i].value(function(stock, value) {
+      var unvested = $("<div class='unvested'></div>").data("index", i);
       var vestedPercentage = Math.floor(stock.vestedRatio() * 100).toString() + "%";
       var label = stock.symbol + " $" + value.toFixed(2);
       var vested = $("<div class='vested'></div>").css('width', vestedPercentage).html(label);
+      /*
       unvested.dblclick(function() {
         removeStockElement($(this))
-        renderStocks();
       });
+      */
       unvested.append(vested);
       container.append(unvested);
     });
