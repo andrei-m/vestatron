@@ -1,0 +1,10 @@
+.unvested {
+  background-color: red;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.vested {
+  background-color: green;
+  text-align: right;
+}
