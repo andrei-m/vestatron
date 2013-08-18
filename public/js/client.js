@@ -5,18 +5,27 @@ function Stock(symbol, shares, grantDate) {
   this.shares = shares;
   this.grantDate = new Date(grantDate);
 
-  this.vestedPercentage = function() {
+  this.vestedRatio = function() {
     var today = new Date();
     // account for the 1 year cliff
     var timeSinceGrant = today.getTime() - this.grantDate.getTime();
     var daysSinceGrant = Math.floor(timeSinceGrant / 86400000);
 
     if (daysSinceGrant < 365) {
-        return "0%";
+        return 0;
     }
 
-    var percentage = Math.floor(daysSinceGrant / 1460 * 100);
-    return percentage.toString() + "%";
+    var ratio = daysSinceGrant / 1460;
+    return ratio;
+  };
+
+  this.value = function(cb) {
+    var vestedShareCount = Math.floor(this.vestedRatio() * this.shares);
+    var stock = this;
+    $.ajax("stock/" + this.symbol).done(function(data) {
+      var sharePrice = parseFloat(data);
+      cb(stock, sharePrice * vestedShareCount);
+    });
   }
 }
 
@@ -36,14 +45,19 @@ function renderStocks() {
 
   for (var i=0 ; i < stocks.length; i++) {
     var stock = stocks[i];
-    var unvested = $("<div></div>").data("index", i).addClass('unvested');;
-    var vested = $("<div></div>").addClass('vested').css('width', stock.vestedPercentage()).html(stock.symbol);
-    unvested.dblclick(function() {
+    var unvested = $("<div class='unvested'></div>").data("index", i).addClass('unvested');;
+
+    stock.value(function(stock, value) {
+      var vestedPercentage = Math.floor(stock.vestedRatio() * 100).toString() + "%";
+      var label = stock.symbol + " $" + value.toFixed(2);
+      var vested = $("<div class='vested'></div>").css('width', vestedPercentage).html(label);
+      unvested.dblclick(function() {
         removeStockElement($(this))
         renderStocks();
+      });
+      unvested.append(vested);
+      container.append(unvested);
     });
-    unvested.append(vested);
-    container.append(unvested);
   };
 }
 
