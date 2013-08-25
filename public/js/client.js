@@ -1,8 +1,9 @@
 var stocks = [];
 
-function Stock(symbol, shares, grantDate) {
+function Stock(symbol, shares, strikePrice, grantDate) {
   this.symbol = symbol;
   this.shares = shares;
+  this.strikePrice = strikePrice;
   this.grantDate = new Date(grantDate);
 
   this.vestedRatio = function() {
@@ -22,9 +23,11 @@ function Stock(symbol, shares, grantDate) {
   this.value = function(cb) {
     var vestedShareCount = Math.floor(this.vestedRatio() * this.shares);
     var stock = this;
+
     $.ajax("stock/" + this.symbol).done(function(data) {
       var sharePrice = parseFloat(data);
-      cb(stock, sharePrice * vestedShareCount);
+      var value = (sharePrice - strikePrice) * vestedShareCount;
+      cb(stock, value);
     });
   }
 }
@@ -47,18 +50,25 @@ function renderStocks() {
 
 $(function() {
     var loadedStocks = localStorage.getItem('stocks');
+
     if (loadedStocks) {
       var parsedStocks = JSON.parse(loadedStocks);
+
       // Invoke the constructor to make sure we get the methods the constructor defines
       for (var i=0; i < parsedStocks.length; i++) {
-        stocks.push(new Stock(parsedStocks[i].symbol, parsedStocks[i].shares, parsedStocks[i].grantDate));
+        stocks.push(new Stock(parsedStocks[i].symbol, 
+            parsedStocks[i].shares, 
+            parsedStocks[i].strikePrice,
+            parsedStocks[i].grantDate));
       }
+    
+      renderStocks();
     }
-    renderStocks();
 
     $('button#add').click(function() {
       var stock = new Stock($('input#symbol').val(),
                             $('input#shares').val(),
+                            $('input#strike_price').val(),
                             $('input#grant_date').val());
       $('input').val('');
       stocks.push(stock);
