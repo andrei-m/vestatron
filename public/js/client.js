@@ -33,7 +33,7 @@ function Stock(symbol, shares, strikePrice, grantDate) {
       $.ajax("stock/" + this.symbol).done(function(data) {
         var sharePrice = parseFloat(data);
         stock.sharePrice = sharePrice;
-        var value = (sharePrice - this.strikePrice) * vestedShareCount;
+        var value = (sharePrice - stock.strikePrice) * vestedShareCount;
         cb(stock, value);
       });
     }
