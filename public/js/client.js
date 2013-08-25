@@ -13,22 +13,30 @@ function Stock(symbol, shares, strikePrice, grantDate) {
     var daysSinceGrant = Math.floor(timeSinceGrant / 86400000);
 
     if (daysSinceGrant < 365) {
-        return 0;
+      return 0;
     }
 
     var ratio = daysSinceGrant / 1460;
     return ratio;
   };
 
-  this.value = function(cb) {
-    var vestedShareCount = Math.floor(this.vestedRatio() * this.shares);
+  // if vested==true, return the value of the vested shares, otherwise return 
+  // the overall (vested + unvested) value
+  this.value = function(vested, cb) {
+    var vestedShareCount = vested ? Math.floor(this.vestedRatio() * this.shares) : this.shares;
     var stock = this;
 
-    $.ajax("stock/" + this.symbol).done(function(data) {
-      var sharePrice = parseFloat(data);
-      var value = (sharePrice - strikePrice) * vestedShareCount;
+    if (this.sharePrice) {
+      var value = (this.sharePrice - this.strikePrice) * vestedShareCount;
       cb(stock, value);
-    });
+    } else {
+      $.ajax("stock/" + this.symbol).done(function(data) {
+        var sharePrice = parseFloat(data);
+        stock.sharePrice = sharePrice;
+        var value = (sharePrice - this.strikePrice) * vestedShareCount;
+        cb(stock, value);
+      });
+    }
   }
 }
 
@@ -37,7 +45,7 @@ function renderStocks() {
   container.find("div").remove();
 
   for (var i=0 ; i < stocks.length; i++) {
-    stocks[i].value(function(stock, value) {
+    stocks[i].value(true, function(stock, value) {
       var unvested = $("<div class='unvested'></div>").data("stock", stock);
       var vestedPercentage = Math.floor(stock.vestedRatio() * 100).toString() + "%";
       var label = stock.symbol + " $" + value.toFixed(2);
@@ -57,9 +65,9 @@ $(function() {
       // Invoke the constructor to make sure we get the methods the constructor defines
       for (var i=0; i < parsedStocks.length; i++) {
         stocks.push(new Stock(parsedStocks[i].symbol, 
-            parsedStocks[i].shares, 
-            parsedStocks[i].strikePrice,
-            parsedStocks[i].grantDate));
+          parsedStocks[i].shares, 
+          parsedStocks[i].strikePrice,
+          parsedStocks[i].grantDate));
       }
     
       renderStocks();
@@ -67,8 +75,8 @@ $(function() {
 
     $('button#add').click(function() {
       var stock = new Stock($('input#symbol').val(),
-                            $('input#shares').val(),
-                            $('input#strike_price').val(),
+                            parseInt($('input#shares').val()),
+                            parseFloat($('input#strike_price').val()),
                             $('input#grant_date').val());
       $('input').val('');
       stocks.push(stock);
