@@ -1,11 +1,14 @@
+body {
+  font-family: Tahoma, Geneva, sans-serif;
+}
 .unvested {
-  background-color: red;
+  background-color: #D74942;
   margin-top: 5px;
   margin-bottom: 5px;
 }
 
 .vested {
-  background-color: green;
+  background-color: #60CB48;
   text-align: right;
   white-space: nowrap;
 }
