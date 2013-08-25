@@ -20,10 +20,8 @@ function Stock(symbol, shares, strikePrice, grantDate) {
     return ratio;
   };
 
-  // if vested==true, return the value of the vested shares, otherwise return 
-  // the overall (vested + unvested) value
-  this.value = function(vested, cb) {
-    var vestedShareCount = vested ? Math.floor(this.vestedRatio() * this.shares) : this.shares;
+  this.value = function(cb) {
+    var vestedShareCount = Math.floor(this.vestedRatio() * this.shares);
     var stock = this;
 
     if (this.sharePrice) {
@@ -38,20 +36,61 @@ function Stock(symbol, shares, strikePrice, grantDate) {
       });
     }
   }
+
+  // This function only returns a value once the callback in 'value()' has set a sharePrice
+  this.potentialValue = function() {
+    if (this.sharePrice) {
+      return (this.sharePrice - this.strikePrice) * this.shares;
+    } else {
+      return 0;
+    }
+  }
 }
 
 function renderStocks() {
+  var unvestedDivs = {};
+
+  // Convert a ratio between {0,1} to a CSS-frienndly percentage
+  function ratioToPercent(ratio) {
+    return Math.floor(ratio * 100).toString() + "%";
+  }
+
+  // Scale the unvested div widths according to the max value 
+  // (i.e. the most valuable stock = 100%; everything else is less wide)
+  function scaleForMaxValue(unvestedDiv, stock) {
+    unvestedDivs[JSON.stringify(stock)] = unvestedDiv;
+
+    // Start scaling once the last div is processed
+    if (Object.keys(unvestedDivs).length == stocks.length) {
+      var maxValue = 0;
+
+      for (key in unvestedDivs) {
+        var div = unvestedDivs[key];
+        var stock = div.data("stock");
+        maxValue = Math.max(maxValue, stock.potentialValue());
+      }
+
+      for (key in unvestedDivs) {
+        var div = unvestedDivs[key];
+        var stock = div.data("stock");
+        var ratio = stock.potentialValue() / maxValue;
+        div.css('width', ratioToPercent(ratio));
+      }
+    }
+  }
+
   var container = $("#graphs");
   container.find("div").remove();
 
   for (var i=0 ; i < stocks.length; i++) {
-    stocks[i].value(true, function(stock, value) {
+    stocks[i].value(function(stock, value) {
       var unvested = $("<div class='unvested'></div>").data("stock", stock);
-      var vestedPercentage = Math.floor(stock.vestedRatio() * 100).toString() + "%";
+      var vestedPercentage = ratioToPercent(stock.vestedRatio());
       var label = stock.symbol + " $" + value.toFixed(2);
       var vested = $("<div class='vested'></div>").css('width', vestedPercentage).html(label);
       unvested.append(vested);
       container.append(unvested);
+      scaleForMaxValue(unvested, stock);
     });
   };
 }
